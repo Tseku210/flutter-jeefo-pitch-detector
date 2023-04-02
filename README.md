@@ -79,14 +79,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
 ## API Docs
 
-#### JeefoPitchDetector.activate()
+#### JeefoPitchDetector.activate() -> boolean
 It will request platform specific microphone usage if user hasn't already 
 decided yet then activate Audio Engine and start recording samples to analyse.
 ```dart
 await JeefoPitchDetector.activate();
 ```
 
-### JeefoPitchDetector.getPitch() -> boolean
+### JeefoPitchDetector.getPitch() -> double
 It will retrieve currently analysed FFT pitch from background thread.
 ```dart
 double pitch = await JeefoPitchDetector.getPitch();

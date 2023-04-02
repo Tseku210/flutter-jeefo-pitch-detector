@@ -79,7 +79,7 @@ It will return a String representing closest musical note for given pitch.
 String note = JeefoPitchDetector.pitchToNoteName(pitch);
 ```
 
-### More configuration and API will be added next updates...
+#### More configuration and API will be added next updates...
 
 ## License
 **MIT**

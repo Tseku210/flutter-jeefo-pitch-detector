@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _lastUpdateTime = DateTime.now();
     }
     // Schedule the next update
-    Future.delayed(const Duration(milliseconds: 13)).then((_) => _updatePitch());
+    Future.delayed(const Duration(milliseconds: 14)).then((_) => _updatePitch());
   }
 
   @override

@@ -20,12 +20,12 @@ dependencies:
 ## Getting started
 ### Android
 On Android you should change `minSdkVersion` to `21` in 
-`android/app/build.gradle`.  Default `minSdkVersion` is `16` which has problem 
-with linking Math library when building C codes. In the `fft.c` pitch analysing 
-file using `log2` math function.  But flutter build system cannot linking math 
-library against `fft.o` and it said `ld: undefined symbol log2` in my MacOS 
-machine. So I changed `minSdkVersion` to `19` it does building. But I set 
-`minSdkVersion` to `21` I don't know why... :)
+`android/app/build.gradle` file.  Default `minSdkVersion` is `16` which has 
+problem with linking Math library when building C codes. In the `fft.c` pitch 
+analysing file using `log2` math function.  But flutter build system cannot 
+linking math library against `fft.o` and it said `ld: undefined symbol log2` in 
+my MacOS machine. So I changed `minSdkVersion` to `19` it does building. But I 
+set `minSdkVersion` to `21` I don't know why... :)
 ```
 android {
   ...

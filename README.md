@@ -18,6 +18,28 @@ dependencies:
 ```
 
 ## Getting started
+### Android
+On Android you should change minSdkVersion to 21 in `android/app/build.gradle`.
+Default minSdkVersion is 16 which has problem with linking Math library when 
+building C code. In the `fft.c` pitch analysing file using `log2` math function.
+But flutter build system cannot linking math library against `fft.o`
+`ld: undefined symbol log2` in my MacOS machine. So I changed minSdkVersion to 
+`19` it does building. But I set `minSdkVersion` to `21` I don't know why... :)
+```
+android {
+  ...
+  defaultConfig {
+    minSdkVersion 21
+    ...
+  }
+  ...
+}
+```
+
+### IOS
+You need to add `Privacy - Microphone Usage Description` in `info.plist`.
+
+### Example Code
 ```dart
 import 'package:jeefo_pitch_detector/jeefo_pitch_detector.dart';
 

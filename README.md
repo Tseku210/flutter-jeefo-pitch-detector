@@ -70,6 +70,8 @@ class _MyHomePageState extends State<MyHomePage> {
         _note = JeefoPitchDetector.pitchToNoteName(pitch);
       });
     }
+    // Schedule the next update
+    Future.delayed(const Duration(milliseconds: 14)).then((_) => _updatePitch());
     // do your thing...
   }
 }

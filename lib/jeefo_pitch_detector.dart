@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'jeefo_pitch_detector_platform_interface.dart';
 
-class JeefoPitchDetector {
+abstract class JeefoPitchDetector {
   static Future<void> activate() async {
     await JeefoPitchDetectorPlatform.instance.activate();
   }

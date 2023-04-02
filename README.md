@@ -3,7 +3,7 @@
 IOS and Android cross platform native C microphone pitch detector using FFT 
 analyse.
 
-<div align="center"
+<div align="center">
   <img src="https://github.com/je3f0o/flutter-jeefo-pitch-detector/blob/master/screenshot.jpg" width="50%" alt="Screenshot">
 </div>
 

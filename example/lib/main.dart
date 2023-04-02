@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _lastUpdateTime = DateTime.now();
     }
     // Schedule the next update
-    Future.delayed(const Duration(milliseconds: 14)).then((_) => _updatePitch());
+    Future.delayed(const Duration(milliseconds: 13)).then((_) => _updatePitch());
   }
 
   @override
@@ -72,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 16.0),
             Text(
-              'Pitch: ${_pitch.toStringAsFixed(0)}',
+              'Pitch: ${_pitch.toStringAsFixed(0)}Hz',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 16.0),

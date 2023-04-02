@@ -82,4 +82,4 @@ String note = JeefoPitchDetector.pitchToNoteName(pitch);
 ## More configuration and API will be added next updates...
 
 ## License
-*MIT*
+**MIT**

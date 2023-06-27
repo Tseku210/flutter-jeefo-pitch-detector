@@ -17,35 +17,48 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _note = "Unknown";
+  String _note = 'Unknown';
   double _pitch = 0.0;
+  double _amplitude = 0.0;
+  double _amplitudeThreshold = 0.05; // Initial value for the amplitude threshold
   int _fps = 0;
   int _frameCount = 0;
+  bool _isMicrophoneActive = false;
   DateTime _lastUpdateTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _activateMicrophone().then((_) {
-      _updatePitch();
+    _toggleMicrophone();
+    _updateJPD();
+  }
+
+  Future<void> _toggleMicrophone() async {
+    if (_isMicrophoneActive) {
+      await JeefoPitchDetector.deactivate();
+    } else {
+      await JeefoPitchDetector.activate();
+    }
+    setState(() {
+      _isMicrophoneActive = !_isMicrophoneActive;
     });
   }
 
-  Future<void> _activateMicrophone() async {
-    await JeefoPitchDetector.activate();
-  }
-
-  Future<void> _updatePitch() async {
-    double pitch = await JeefoPitchDetector.getPitch();
+  Future<void> _updateJPD() async {
+    List<double> values = await JeefoPitchDetector.getValues(_amplitudeThreshold);
+    double pitch = values[0];
+    double amplitude = values[1];
     if (pitch > 0) {
       setState(() {
         _pitch = pitch;
         _note = JeefoPitchDetector.pitchToNoteName(pitch);
+        _amplitude = amplitude;
       });
     }
     _frameCount++;
     if (DateTime.now().difference(_lastUpdateTime).inMilliseconds > 1000) {
-      int fps = (_frameCount / (DateTime.now().difference(_lastUpdateTime).inMilliseconds / 1000)).floor();
+      int fps =
+      (_frameCount / (DateTime.now().difference(_lastUpdateTime).inMilliseconds / 1000)).floor();
       setState(() {
         _fps = fps;
       });
@@ -53,14 +66,14 @@ class _MyHomePageState extends State<MyHomePage> {
       _lastUpdateTime = DateTime.now();
     }
     // Schedule the next update
-    Future.delayed(const Duration(milliseconds: 14)).then((_) => _updatePitch());
+    Future.delayed(const Duration(milliseconds: 14)).then((_) => _updateJPD());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(_isMicrophoneActive ? '${widget.title} (Active)' : widget.title),
       ),
       body: Center(
         child: Column(
@@ -68,20 +81,52 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             Text(
               'Note: $_note',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16.0),
             Text(
               'Pitch: ${_pitch.toStringAsFixed(0)}Hz',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16.0),
+            Text(
+              'Amplitude: ${_amplitude.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16.0),
+            Text(
+              'Amplitude threshold: ${_amplitudeThreshold.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16.0),
             Text(
               'FPS: $_fps',
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 16.0),
+            Slider(
+              value: _amplitudeThreshold,
+              min: 0.0,
+              max: 1.0,
+              divisions: 100,
+              label: 'Amplitude Threshold: ${_amplitudeThreshold.toStringAsFixed(2)}',
+              onChanged: (value) {
+                setState(() {
+                  _amplitudeThreshold = value;
+                });
+              },
+            ),
           ],
         ),
+      ),
+      floatingActionButton: TextButton(
+        onPressed: _toggleMicrophone,
+        style: ButtonStyle(
+          foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+          backgroundColor: MaterialStateProperty.all<Color>(
+              _isMicrophoneActive ? Colors.red : Colors.blue),
+        ),
+        child: Text(_isMicrophoneActive ? 'Deactivate Microphone' : 'Activate Microphone'),
       ),
     );
   }

@@ -15,7 +15,20 @@ class JeefoPitchDetectorChannel extends JeefoPitchDetectorPlatform {
   }
 
   @override
-  Future<double> getPitch() async {
-    return await channel.invokeMethod<double>('get_pitch') ?? 0;
+  Future<List<double>> getValues(double amplitudeThreshold) async {
+    final dynamic result = await channel.invokeMethod('get_values', {
+      'amplitudeThreshold': amplitudeThreshold,
+    });
+
+    if (result is List<dynamic>) {
+      return result.cast<double>();
+    } else {
+      throw Exception('Invalid result type');
+    }
+  }
+
+  @override
+  Future<void> deactivate() async {
+    await channel.invokeMethod<void>('deactivate');
   }
 }

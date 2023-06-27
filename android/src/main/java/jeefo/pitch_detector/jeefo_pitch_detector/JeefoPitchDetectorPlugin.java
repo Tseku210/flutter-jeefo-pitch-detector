@@ -21,6 +21,9 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.util.Arrays;
+import java.util.List;
+
 /** JeefoPitchDetectorPlugin */
 public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
   /// The MethodChannel that will the communication between Flutter and native Android
@@ -33,15 +36,15 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
 
   private static final int SAMPLE_RATE = 44000;
   private static final int BUFFER_SIZE = 1024;
-  private long zt_data_ptr   = 0; // Pointer to the C data structure
-  private long zt_ptrack_ptr = 0; // Pointer to the C data structure
-  private int peak_count = 20;
-  private int hop_size   = BUFFER_SIZE;
-  private  double pitch = 0;
+  private static final int hop_size   = BUFFER_SIZE;
+  private static final int peak_count = 20;
+  private static float amplitudeThreshold = 0;
+  private double pitch     = 0;
+  private double amplitude = 0;
+  private boolean is_activated = false;
 
   // AudioEngine
   private Activity activity;
-  private @NonNull Result result;
   private AudioRecord audioRecord;
   private short[] audioBuffer;
 
@@ -54,12 +57,28 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     switch (call.method) {
-      case "activate"  : activate(result); break;
-      case "deactivate": deactivate(); result.success(null); break;
-      case "get_pitch" : result.success(pitch); break;
-      default: result.notImplemented(); break;
+      case "activate":
+        activate();
+        result.success(null);
+        break;
+      case "deactivate":
+        deactivate();
+        result.success(null);
+        break;
+      case "get_values":
+        Number threshold = call.argument("amplitudeThreshold");
+        if (threshold != null) {
+          amplitudeThreshold = threshold.floatValue();
+        }
+        List<Double> values = Arrays.asList(pitch, amplitude);
+        result.success(values);
+        break;
+      default:
+        result.notImplemented();
+        break;
     }
   }
+
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
@@ -89,32 +108,29 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
 
       @Override
       public void onPeriodicNotification(AudioRecord recorder) {
+        if (!is_activated) return;
         audioRecord.read(audioBuffer, 0, BUFFER_SIZE);
-        pitch = get_pitch(audioBuffer, 0);
+        float[] values = new float[3];
+        values[2] = amplitudeThreshold;
+        jpd_get_values_from_i16(audioBuffer, values);
+        pitch = values[0];
+        amplitude = values[1];
       }
     });
     audioRecord.startRecording();
-    result.success(null);
-    result = null;
   }
 
-  private void activate(@NonNull Result result) {
+  private void activate() {
     if (!is_library_loaded) {
       System.loadLibrary("jeefo-pitch-detector");
       is_library_loaded = true;
     }
-    if (zt_data_ptr == 0) {
-      zt_data_ptr = zt_create();
-      zt_data_set_sr(zt_data_ptr, SAMPLE_RATE);
-    }
-    if (zt_ptrack_ptr == 0) {
-      zt_ptrack_ptr = zt_ptrack_create();
-      zt_ptrack_init(zt_data_ptr, zt_ptrack_ptr, hop_size, peak_count);
-    }
+    jpd_init(hop_size, peak_count);
+    jpd_set_sample_rate(SAMPLE_RATE);
     if (audioRecord == null) {
-      this.result = result;
       activate_audio_engine();
     }
+    is_activated = true;
   }
 
   private void deactivate() {
@@ -123,30 +139,8 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
       audioRecord.release();
       audioRecord = null;
     }
-    if (zt_data_ptr != 0) {
-      zt_destroy(zt_data_ptr);
-      zt_data_ptr = 0;
-    }
-    if (zt_ptrack_ptr != 0) {
-      zt_ptrack_destroy(zt_ptrack_ptr);
-      zt_ptrack_ptr = 0;
-    }
-  }
-
-  private double get_pitch(short[] audioData, double amplitudeThreshold) {
-    float frame[]      = new float[1];
-    float fpitch[]     = new float[1];
-    float famplitude[] = new float[1];
-
-    for (int i = 0; i < audioData.length; ++i) {
-      frame[0] = audioData[i] / 32768f;
-      zt_ptrack_compute(zt_data_ptr, zt_ptrack_ptr, frame, fpitch, famplitude);
-    }
-
-    double pitch = fpitch[0];
-    double amplitude = famplitude[0];
-
-    return (amplitude > amplitudeThreshold && pitch > 0) ? pitch : -1;
+    jpd_destroy();
+    is_activated = false;
   }
 
   @Override
@@ -179,11 +173,8 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
     return false;
   }
 
-  private native long zt_create();
-  private native void zt_destroy(long data_ptr);
-  private native long zt_ptrack_create();
-  private native void zt_ptrack_destroy(long ptrack_ptr);
-  private native void zt_data_set_sr(long data_ptr, int sr);
-  private native void zt_ptrack_init(long data_ptr, long ptrack_ptr, int hop_size, int peak_count);
-  public native void zt_ptrack_compute(long dataPtr, long ptrackPtr, float[] input, float[] outputFreq, float[] outputAmp);
+  private native void jpd_init(int hop_size, int peak_count);
+  private native void jpd_destroy();
+  private native void jpd_get_values_from_i16(short[] audioData, float[] values);
+  private native void jpd_set_sample_rate(int sr);
 }

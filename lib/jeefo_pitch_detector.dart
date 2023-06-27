@@ -6,8 +6,12 @@ abstract class JeefoPitchDetector {
     await JeefoPitchDetectorPlatform.instance.activate();
   }
 
-  static Future<double> getPitch() async {
-    return JeefoPitchDetectorPlatform.instance.getPitch();
+  static Future<void> deactivate() async {
+    await JeefoPitchDetectorPlatform.instance.deactivate();
+  }
+
+  static Future<List<double>> getValues(double amplitudeThreshold) async {
+    return JeefoPitchDetectorPlatform.instance.getValues(amplitudeThreshold);
   }
 
   static String pitchToNoteName(double pitch) {

@@ -16,8 +16,21 @@
     [JeefoPitchDetector.shared activateWithCompletion:^(BOOL success) {
       result(@(success));
     }];
-  } else if ([@"get_pitch" isEqualToString:call.method]) {
-    result(@(JeefoPitchDetector.shared.pitch));
+  } else if ([@"get_values" isEqualToString:call.method]) {
+    NSNumber *threshold = call.arguments[@"amplitudeThreshold"];
+    if (threshold != nil) {
+      JeefoPitchDetector.shared.amplitudeThreshold = threshold.floatValue;
+    }
+    
+    double pitch     = JeefoPitchDetector.shared.pitch;
+    double amplitude = JeefoPitchDetector.shared.amplitude;
+    NSArray *values = @[ @(pitch), @(amplitude) ];
+    
+    result(values);
+  } else if ([@"deactivate" isEqualToString:call.method]) {
+    [JeefoPitchDetector.shared deactivateWithCompletion:^(BOOL success) {
+      result(@(success));
+    }];
   } else {
     result(FlutterMethodNotImplemented);
   }

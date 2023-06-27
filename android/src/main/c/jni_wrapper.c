@@ -1,63 +1,42 @@
 #include <jni.h>
+#include <assert.h>
 #include "FFTPitchAnalyser.h"
 
 #define UNUSED(x) (void)x
 
-JNIEXPORT jlong JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1create(JNIEnv* e, jobject o) {
-    UNUSED(e); UNUSED(o);
-    zt_data *data;
-    zt_create(&data);
-    return (jlong) data;
-}
-
+// init function implementation
 JNIEXPORT void JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1destroy(JNIEnv* e, jobject o, jlong data_ptr) {
-    UNUSED(e); UNUSED(o);
-    zt_data **spp = (zt_data **) data_ptr;
-    zt_destroy(spp);
+Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_jpd_1init(JNIEnv *env, jobject obj, jint hop_size, jint peak_count) {
+  UNUSED(env); UNUSED(obj);
+  jpd_init(hop_size, peak_count);
 }
 
-JNIEXPORT jlong JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1ptrack_1create(JNIEnv* e, jobject o) {
-    UNUSED(e); UNUSED(o);
-    zt_ptrack *ptrack;
-    zt_ptrack_create(&ptrack);
-    return (jlong) ptrack;
-}
-
+// destroy function implementation
 JNIEXPORT void JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1data_1set_1sr(JNIEnv* e, jobject o, jlong data_ptr, jint sr) {
-    UNUSED(e); UNUSED(o);
-    zt_data *data = (zt_data *) data_ptr;
-    data->sr = sr;
+Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_jpd_1destroy(JNIEnv *env, jobject obj) {
+  UNUSED(env); UNUSED(obj);
+  jpd_destroy();
 }
 
+// get_pitch function implementation
 JNIEXPORT void JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1ptrack_1init(JNIEnv* e, jobject o, jlong data_ptr, jlong ptrack_ptr, jint hop_size, jint peak_count) {
-    UNUSED(e); UNUSED(o);
-    zt_data *data = (zt_data *) data_ptr;
-    zt_ptrack *ptrack = (zt_ptrack *) ptrack_ptr;
-    zt_ptrack_init(data, ptrack, hop_size, peak_count);
+Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_jpd_1get_1values_1from_1i16(JNIEnv *env, jobject obj, jshortArray audioData, jfloatArray jValues) {
+  UNUSED(obj);
+  jfloat* values = (*env)->GetFloatArrayElements(env, jValues, NULL);
+  jsize length = (*env)->GetArrayLength(env, audioData);
+  jshort *audioBuffer = (*env)->GetShortArrayElements(env, audioData, NULL);
+  assert(values != NULL && audioBuffer != NULL);
+
+  jpd_get_values_from_i16(audioBuffer, length, values);
+
+  // Release java data
+  (*env)->ReleaseShortArrayElements(env, audioData, audioBuffer, 0);
+  (*env)->ReleaseFloatArrayElements(env, jValues, values, 0);
 }
 
+// set_sample_rate function implementation
 JNIEXPORT void JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1ptrack_1destroy(JNIEnv* e, jobject o, jlong ptrack_ptr) {
-    UNUSED(e); UNUSED(o);
-    zt_ptrack **p = (zt_ptrack **) ptrack_ptr;
-    zt_ptrack_destroy(p);
-}
-
-JNIEXPORT void JNICALL
-Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_zt_1ptrack_1compute(JNIEnv* env, jobject o, jlong data_ptr, jlong ptrack_ptr, jfloatArray in, jfloatArray out_freq, jfloatArray out_amp) {
-    UNUSED(env); UNUSED(o);
-    zt_data *data = (zt_data *) data_ptr;
-    zt_ptrack *ptrack = (zt_ptrack *) ptrack_ptr;
-    jfloat *in_data = (*env)->GetFloatArrayElements(env, in, NULL);
-    jfloat *out_freq_data = (*env)->GetFloatArrayElements(env, out_freq, NULL);
-    jfloat *out_amp_data = (*env)->GetFloatArrayElements(env, out_amp, NULL);
-    zt_ptrack_compute(data, ptrack, in_data, out_freq_data, out_amp_data);
-    (*env)->ReleaseFloatArrayElements(env, in, in_data, 0);
-    (*env)->ReleaseFloatArrayElements(env, out_freq, out_freq_data, 0);
-    (*env)->ReleaseFloatArrayElements(env, out_amp, out_amp_data, 0);
+Java_jeefo_pitch_1detector_jeefo_1pitch_1detector_JeefoPitchDetectorPlugin_jpd_1set_1sample_1rate(JNIEnv* e, jobject o, jint sr) {
+  UNUSED(e); UNUSED(o);
+  jpd_set_sample_rate(sr);
 }

@@ -59,7 +59,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _updatePitch() async {
-    double pitch = await JeefoPitchDetector.getPitch();
+    List<double> values = await JeefoPitchDetector.getValues(_amplitudeThreshold);
+    double pitch     = values[0];
+    double amplitude = values[1];
     if (pitch > 0) {
       setState(() {
         _pitch = pitch;
@@ -82,10 +84,16 @@ decided yet then activate Audio Engine and start recording samples to analyse.
 await JeefoPitchDetector.activate();
 ```
 
-### JeefoPitchDetector.getPitch() -> double
-It will retrieve currently analysed FFT pitch from background thread.
+#### JeefoPitchDetector.deactivate() -> boolean
 ```dart
-double pitch = await JeefoPitchDetector.getPitch();
+await JeefoPitchDetector.deactivate();
+```
+
+### JeefoPitchDetector.getValues(double amplitudeThreshold) -> List<double>
+It will retrieve currently analysed FFT pitch and amplitude values from 
+background thread.
+```dart
+double pitch = await JeefoPitchDetector.getValues(0.05);
 ```
 
 ### JeefoPitchDetector.pitchToNoteName(double) -> String

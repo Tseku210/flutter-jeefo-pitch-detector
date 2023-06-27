@@ -4,7 +4,7 @@ IOS and Android cross platform native C microphone pitch detector using FFT
 analyse.
 
 <div align="center">
-  <img src="https://github.com/je3f0o/flutter-jeefo-pitch-detector/blob/master/screenshot.jpg" width="30%" alt="Screenshot">
+  <img src="https://github.com/je3f0o/flutter-jeefo-pitch-detector/blob/master/screenshot2.jpg" width="30%" alt="Screenshot">
 </div>
 
 ## Installation
@@ -21,11 +21,7 @@ dependencies:
 ### Android
 On Android you should change `minSdkVersion` to `21` in 
 `android/app/build.gradle` file.  Default `minSdkVersion` is `16` which has 
-problem with linking Math library when building C codes. In the `fft.c` pitch 
-analysing file using `log2` math function.  But flutter build system cannot 
-linking math library against `fft.o` and it said `ld: undefined symbol log2` in 
-my MacOS machine. So I changed `minSdkVersion` to `19` it does building. But I 
-set `minSdkVersion` to `21` I don't know why... :)
+problem with linking Math library when building C codes.
 ```
 android {
   ...

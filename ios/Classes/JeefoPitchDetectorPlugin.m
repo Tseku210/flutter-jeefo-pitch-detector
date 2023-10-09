@@ -1,5 +1,6 @@
 #import "JeefoPitchDetectorPlugin.h"
 #import "JeefoPitchDetector.h"
+#import "FFTPitchAnalyser/include/jeefo_pitch_detector.h"
 
 @implementation JeefoPitchDetectorPlugin
 
@@ -13,18 +14,23 @@
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([@"activate" isEqualToString:call.method]) {
-    [JeefoPitchDetector.shared activateWithCompletion:^(BOOL success) {
+    NSNumber *threshold = call.arguments[@"threshold"];
+    assert(threshold != NULL);
+    [JeefoPitchDetector.shared activateWithThreshold:threshold.floatValue completion:^(BOOL success) {
       result(@(success));
     }];
+  } else if ([@"set_confidence_threshold" isEqualToString:call.method]) {
+    NSNumber *threshold = call.arguments[@"threshold"];
+    assert(threshold != NULL);
+    jpd_set_confidence_threshold(threshold.floatValue);
+    result(nil);
   } else if ([@"get_values" isEqualToString:call.method]) {
-    NSNumber *threshold = call.arguments[@"amplitudeThreshold"];
-    if (threshold != nil) {
-      JeefoPitchDetector.shared.amplitudeThreshold = threshold.floatValue;
-    }
-    
-    double pitch     = JeefoPitchDetector.shared.pitch;
-    double amplitude = JeefoPitchDetector.shared.amplitude;
-    NSArray *values = @[ @(pitch), @(amplitude) ];
+    double pitch      = JeefoPitchDetector.shared.pitch;
+    double confidence = JeefoPitchDetector.shared.confidence;
+    NSArray *values = @[
+      @(pitch),
+      @(confidence)
+    ];
     
     result(values);
   } else if ([@"deactivate" isEqualToString:call.method]) {

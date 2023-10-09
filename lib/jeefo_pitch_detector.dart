@@ -2,16 +2,20 @@ import 'dart:math';
 import 'jeefo_pitch_detector_platform_interface.dart';
 
 abstract class JeefoPitchDetector {
-  static Future<void> activate() async {
-    await JeefoPitchDetectorPlatform.instance.activate();
+  static Future<void> activate(double threshold) async {
+    await JeefoPitchDetectorPlatform.instance.activate(threshold);
   }
 
   static Future<void> deactivate() async {
     await JeefoPitchDetectorPlatform.instance.deactivate();
   }
 
-  static Future<List<double>> getValues(double amplitudeThreshold) async {
-    return JeefoPitchDetectorPlatform.instance.getValues(amplitudeThreshold);
+  static Future<List<double>> getValues() async {
+    return JeefoPitchDetectorPlatform.instance.getValues();
+  }
+
+  static Future<void> setConfidenceThreshold(double threshold) async {
+    await JeefoPitchDetectorPlatform.instance.setConfidenceThreshold(threshold);
   }
 
   static String pitchToNoteName(double pitch) {

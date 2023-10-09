@@ -19,8 +19,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _note = 'Unknown';
   double _pitch = 0.0;
-  double _amplitude = 0.0;
-  double _amplitudeThreshold = 0.05; // Initial value for the amplitude threshold
+  double _confidence = 0.0;
+  double _confidenceThreshold = 0.95;
   int _fps = 0;
   int _frameCount = 0;
   bool _isMicrophoneActive = false;
@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_isMicrophoneActive) {
       await JeefoPitchDetector.deactivate();
     } else {
-      await JeefoPitchDetector.activate();
+      await JeefoPitchDetector.activate(_confidenceThreshold);
     }
     setState(() {
       _isMicrophoneActive = !_isMicrophoneActive;
@@ -45,14 +45,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _updateJPD() async {
-    List<double> values = await JeefoPitchDetector.getValues(_amplitudeThreshold);
+    List<double> values = await JeefoPitchDetector.getValues();
     double pitch = values[0];
-    double amplitude = values[1];
     if (pitch > 0) {
       setState(() {
         _pitch = pitch;
         _note = JeefoPitchDetector.pitchToNoteName(pitch);
-        _amplitude = amplitude;
+        _confidence = values[1];
       });
     }
     _frameCount++;
@@ -67,6 +66,10 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     // Schedule the next update
     Future.delayed(const Duration(milliseconds: 14)).then((_) => _updateJPD());
+  }
+
+  Future<void> _updateThreshold(double threshold) async {
+    await JeefoPitchDetector.setConfidenceThreshold(threshold);
   }
 
   @override
@@ -90,12 +93,12 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 16.0),
             Text(
-              'Amplitude: ${_amplitude.toStringAsFixed(2)}',
+              'Confidence: ${_confidence.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16.0),
             Text(
-              'Amplitude threshold: ${_amplitudeThreshold.toStringAsFixed(2)}',
+              'Min confidence threshold: ${_confidenceThreshold.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16.0),
@@ -105,15 +108,18 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 16.0),
             Slider(
-              value: _amplitudeThreshold,
+              value: _confidenceThreshold,
               min: 0.0,
               max: 1.0,
               divisions: 100,
-              label: 'Amplitude Threshold: ${_amplitudeThreshold.toStringAsFixed(2)}',
+              label: 'Min confidence threshold: ${
+                _confidenceThreshold.toStringAsFixed(2)
+              }',
               onChanged: (value) {
                 setState(() {
-                  _amplitudeThreshold = value;
+                  _confidenceThreshold = value;
                 });
+                _updateThreshold(value);
               },
             ),
           ],

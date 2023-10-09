@@ -23,12 +23,16 @@ abstract class JeefoPitchDetectorPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<void> activate() {
-    throw UnimplementedError('activate() has not been implemented.');
+  Future<void> activate(double threshold) {
+    throw UnimplementedError('activate(double threshold) has not been implemented.');
   }
 
-  Future<List<double>> getValues(double amplitudeThreshold) {
-    throw UnimplementedError('getValues(amplitudeThreshold) has not been implemented.');
+  Future<List<double>> getValues() {
+    throw UnimplementedError('getValues() has not been implemented.');
+  }
+
+  Future<void> setConfidenceThreshold(double threshold) {
+    throw UnimplementedError('setConfidenceThreshold(double threshold) has not been implemented.');
   }
 
   Future<void> deactivate() {

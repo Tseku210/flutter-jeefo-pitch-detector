@@ -10,15 +10,22 @@ class JeefoPitchDetectorChannel extends JeefoPitchDetectorPlatform {
   final channel = const MethodChannel('jeefo.pitch_detector');
 
   @override
-  Future<void> activate() async {
-    await channel.invokeMethod<void>('activate');
+  Future<void> activate(double threshold) async {
+    await channel.invokeMethod<void>('activate', {
+      "threshold": threshold,
+    });
   }
 
   @override
-  Future<List<double>> getValues(double amplitudeThreshold) async {
-    final dynamic result = await channel.invokeMethod('get_values', {
-      'amplitudeThreshold': amplitudeThreshold,
+  Future<void> setConfidenceThreshold(double threshold) async {
+    await channel.invokeMethod<void>('set_confidence_threshold', {
+      'threshold': threshold,
     });
+  }
+
+  @override
+  Future<List<double>> getValues() async {
+    final dynamic result = await channel.invokeMethod('get_values');
 
     if (result is List<dynamic>) {
       return result.cast<double>();

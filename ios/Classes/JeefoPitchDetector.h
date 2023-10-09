@@ -13,10 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (class, readonly) JeefoPitchDetector *shared;
 @property (nonatomic, assign) double pitch;
-@property (nonatomic, assign) double amplitude;
-@property (nonatomic, assign) float  amplitudeThreshold;
+@property (nonatomic, assign) double confidence;
+@property (nonatomic, assign) float  confidenceThreshold;
 
-- (void)activateWithCompletion:(void (^)(BOOL result))completion;
+- (void)activateWithThreshold:(float)threshold completion:(void (^)(BOOL result))completion;
 - (void)deactivateWithCompletion:(void (^)(BOOL result))completion;
 
 @end

@@ -6,7 +6,7 @@
 //
 
 #import "JeefoPitchDetector.h"
-#import "FFTPitchAnalyser/include/FFTPitchAnalyser.h"
+#import "FFTPitchAnalyser/include/jeefo_pitch_detector.h"
 
 @interface JeefoPitchDetector ()
 
@@ -14,6 +14,9 @@
 @property (nonatomic, assign) BOOL is_activated;
 
 @end
+
+const AVAudioFrameCount NUM_SAMPLES        = 1024;
+const float             SAMPLING_FREQUENCY = 44100;
 
 @implementation JeefoPitchDetector
 
@@ -23,10 +26,11 @@
   dispatch_once(&onceToken, ^{
     instance = [[JeefoPitchDetector alloc] init];
   });
+  instance.confidenceThreshold = 0.95f;
   return instance;
 }
 
-- (void)activateWithCompletion:(void (^)(BOOL result))completion {
+- (void)activateWithThreshold:(float)threshold completion:(void (^)(BOOL result))completion {
   __block BOOL result = NO;
   switch ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio]) {
     case AVAuthorizationStatusAuthorized:
@@ -49,7 +53,12 @@
       result = NO;
       break;
   }
-  self.is_activated = YES;
+  
+  if (result == YES) {
+    jpd_init(NUM_SAMPLES, SAMPLING_FREQUENCY, JeefoPitchDetector.shared.confidenceThreshold);
+    self.is_activated = YES;
+  }
+  
   completion(result);
 }
 
@@ -65,35 +74,28 @@
 
 - (void)start {
   AVAudioInputNode *inputNode = self.audio_engine.inputNode;
-  AVAudioFormat *inputFormat = [inputNode inputFormatForBus:0];
+  AVAudioFormat *inputFormat = [
+    [AVAudioFormat alloc]
+    initWithCommonFormat:AVAudioPCMFormatInt16
+    sampleRate:SAMPLING_FREQUENCY
+    channels:1
+    interleaved:YES
+  ];
 
-  AVAudioFrameCount bufferSize = 1024;
-
-  [inputNode installTapOnBus:0 bufferSize:bufferSize format:inputFormat block:^(AVAudioPCMBuffer *buffer, AVAudioTime *time) {
+  [inputNode installTapOnBus:0 bufferSize:NUM_SAMPLES format:inputFormat block:^(AVAudioPCMBuffer *buffer, AVAudioTime *time) {
     if (self.is_activated) {
-      [self getValues:buffer];
+      float values[10];
+      int16_t* b = buffer.int16ChannelData[0];
+      jpd_get_values_from_i16(b, values);
+
+      if (values[0] > 0) {
+        self.pitch      = values[0];
+        self.confidence = values[1];
+      }
     }
   }];
 
   [self.audio_engine startAndReturnError:nil];
-
-  jpd_init(bufferSize, 20);
-  jpd_set_sample_rate((int32_t)inputFormat.sampleRate);
-}
-
-- (void)getValues:(AVAudioPCMBuffer *)buffer {
-  int length = buffer.frameLength;
-
-  float values[3];
-  values[0] = (float)self.pitch;
-  values[1] = (float)self.amplitude;
-  values[2] = (float)self.amplitudeThreshold;
-
-  float *floatData = buffer.floatChannelData[0];
-  jpd_get_values(floatData, length, values);
-
-  self.pitch = values[0];
-  self.amplitude = values[1];
 }
 
 - (instancetype)init {

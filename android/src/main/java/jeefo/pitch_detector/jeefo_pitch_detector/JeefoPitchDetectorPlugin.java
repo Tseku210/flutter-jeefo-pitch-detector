@@ -15,9 +15,11 @@ import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -34,19 +36,15 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
   private static final String channel_name = "jeefo.pitch_detector";
   private boolean is_library_loaded = false;
 
-  private static final int SAMPLE_RATE = 44000;
-  private static final int BUFFER_SIZE = 1024;
-  private static final int hop_size   = BUFFER_SIZE;
-  private static final int peak_count = 20;
-  private static float amplitudeThreshold = 0;
-  private double pitch     = 0;
-  private double amplitude = 0;
+  private static final int SAMPLING_FREQUENCY = 44100;
+  private static final int NUM_SAMPLES = 1024;
+  private double pitch      = 0;
+  private double confidence = 0;
   private boolean is_activated = false;
 
   // AudioEngine
   private Activity activity;
   private AudioRecord audioRecord;
-  private short[] audioBuffer;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -58,7 +56,8 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     switch (call.method) {
       case "activate":
-        activate();
+        double threshold = call.argument("threshold");
+        activate(threshold);
         result.success(null);
         break;
       case "deactivate":
@@ -66,12 +65,13 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
         result.success(null);
         break;
       case "get_values":
-        Number threshold = call.argument("amplitudeThreshold");
-        if (threshold != null) {
-          amplitudeThreshold = threshold.floatValue();
-        }
-        List<Double> values = Arrays.asList(pitch, amplitude);
+        List<Double> values = Arrays.asList(pitch, confidence);
         result.success(values);
+        break;
+      case "set_confidence_threshold":
+        double th = call.argument("threshold");
+        jpd_set_confidence_threshold((float) th);
+        result.success(null);
         break;
       default:
         result.notImplemented();
@@ -90,43 +90,44 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
       ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
       return;
     }
-    audioBuffer = new short[BUFFER_SIZE];
 
-    audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT, BUFFER_SIZE * 2);
+    audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLING_FREQUENCY, AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES * 2);
 
     if (audioRecord.getState() == AudioRecord.STATE_UNINITIALIZED) {
       Log.e("JeefoPitchDetector", "Failed to initialize audio recorder");
       return;
     }
 
-    audioRecord.setPositionNotificationPeriod(BUFFER_SIZE);
+    audioRecord.setPositionNotificationPeriod(NUM_SAMPLES);
     audioRecord.setRecordPositionUpdateListener(new AudioRecord.OnRecordPositionUpdateListener() {
       @Override
       public void onMarkerReached(AudioRecord recorder) {
       }
 
+      @RequiresApi(api = Build.VERSION_CODES.M)
       @Override
       public void onPeriodicNotification(AudioRecord recorder) {
         if (!is_activated) return;
-        audioRecord.read(audioBuffer, 0, BUFFER_SIZE);
-        float[] values = new float[3];
-        values[2] = amplitudeThreshold;
-        jpd_get_values_from_i16(audioBuffer, values);
-        pitch = values[0];
-        amplitude = values[1];
+        short[] audioBuffer = new short[NUM_SAMPLES];
+        int bytes_read = audioRecord.read(audioBuffer, 0, NUM_SAMPLES);
+        if (bytes_read != AudioRecord.ERROR_INVALID_OPERATION && bytes_read != AudioRecord.ERROR_BAD_VALUE) {
+          float[] values = new float[10];
+          jpd_get_values_from_i16(audioBuffer, values);
+          pitch      = values[0];
+          confidence = values[1];
+        }
       }
     });
     audioRecord.startRecording();
   }
 
-  private void activate() {
+  private void activate(double threshold) {
     if (!is_library_loaded) {
       System.loadLibrary("jeefo-pitch-detector");
       is_library_loaded = true;
     }
-    jpd_init(hop_size, peak_count);
-    jpd_set_sample_rate(SAMPLE_RATE);
+    jpd_init(NUM_SAMPLES, SAMPLING_FREQUENCY, (float)threshold);
     if (audioRecord == null) {
       activate_audio_engine();
     }
@@ -173,8 +174,8 @@ public class JeefoPitchDetectorPlugin implements FlutterPlugin, MethodCallHandle
     return false;
   }
 
-  private native void jpd_init(int hop_size, int peak_count);
+  private native void jpd_init(int num_samples, int sampling_frequency, float threshold);
   private native void jpd_destroy();
-  private native void jpd_get_values_from_i16(short[] audioData, float[] values);
-  private native void jpd_set_sample_rate(int sr);
+  private native void jpd_get_values_from_i16(short[] buffer, float[] out);
+  private native void jpd_set_confidence_threshold(float threshold);
 }

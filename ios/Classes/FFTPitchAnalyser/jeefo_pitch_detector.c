@@ -35,7 +35,7 @@ void jpd_set_confidence_threshold(float threshold) {
   yin.threshold = 1.0f - threshold;
 }
 
-void jpd_get_values(const float* buffer, float* out) {
+void jpd_get_values_from_float(const float* buffer, float* out) {
   int16_t short_buffer[yin.num_samples];
   for (int i = 0; i < yin.num_samples; ++i) {
     short_buffer[i]  = (short)(buffer[i] * 32767);

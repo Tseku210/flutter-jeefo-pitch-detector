@@ -1,10 +1,10 @@
 # jeefo_pitch_detector
 
-IOS and Android cross platform native C microphone pitch detector using FFT 
-analyse.
+IOS and Android cross platform native C microphone pitch detector using Yin FFT
+algorithm to analyse.
 
 <div align="center">
-  <img src="https://github.com/je3f0o/flutter-jeefo-pitch-detector/blob/master/screenshot2.jpg" width="30%" alt="Screenshot">
+  <img src="https://github.com/je3f0o/flutter-jeefo-pitch-detector/blob/master/screenshot.jpg" width="30%" alt="Screenshot">
 </div>
 
 ## Installation
@@ -19,8 +19,8 @@ dependencies:
 
 ## Getting started
 ### Android
-On Android you should change `minSdkVersion` to `21` in 
-`android/app/build.gradle` file.  Default `minSdkVersion` is `16` which has 
+On Android you should change `minSdkVersion` to `21` in
+`android/app/build.gradle` file.  Default `minSdkVersion` is `16` which has
 problem with linking Math library when building C codes.
 ```
 android {
@@ -55,13 +55,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _activateMicrophone() async {
-    await JeefoPitchDetector.activate();
+    await JeefoPitchDetector.activate(_confidenceThreshold);
   }
 
   Future<void> _updatePitch() async {
-    List<double> values = await JeefoPitchDetector.getValues(_amplitudeThreshold);
-    double pitch     = values[0];
-    double amplitude = values[1];
+    List<double> values = await JeefoPitchDetector.getValues();
+    double pitch      = values[0];
+    double confidence = values[1];
     if (pitch > 0) {
       setState(() {
         _pitch = pitch;
@@ -77,11 +77,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
 ## API Docs
 
-#### JeefoPitchDetector.activate() -> boolean
-It will request platform specific microphone usage if user hasn't already 
+#### JeefoPitchDetector.activate(double minConfidenceThreshold) -> boolean
+It will request platform specific microphone usage if user hasn't already
 decided yet then activate Audio Engine and start recording samples to analyse.
 ```dart
-await JeefoPitchDetector.activate();
+await JeefoPitchDetector.activate(_confidenceThreshold);
 ```
 
 #### JeefoPitchDetector.deactivate() -> boolean
@@ -89,11 +89,11 @@ await JeefoPitchDetector.activate();
 await JeefoPitchDetector.deactivate();
 ```
 
-### JeefoPitchDetector.getValues(double amplitudeThreshold) -> List<double>
-It will retrieve currently analysed FFT pitch and amplitude values from 
+### JeefoPitchDetector.getValues() -> List<double>
+It will retrieve currently analysed FFT pitch and confidence values from
 background thread.
 ```dart
-double pitch = await JeefoPitchDetector.getValues(0.05);
+List<double> values = await JeefoPitchDetector.getValues();
 ```
 
 ### JeefoPitchDetector.pitchToNoteName(double) -> String

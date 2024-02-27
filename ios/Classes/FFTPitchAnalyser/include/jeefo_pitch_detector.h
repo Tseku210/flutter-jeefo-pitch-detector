@@ -11,7 +11,7 @@ void jpd_init(
 );
 void jpd_destroy(void);
 void jpd_set_confidence_threshold(float threshold);
-void jpd_get_values(const float* buffer, float* out);
+void jpd_get_values_from_float(const float* buffer, float* out);
 void jpd_get_values_from_i16(int16_t* buffer, float* out);
 
 #endif

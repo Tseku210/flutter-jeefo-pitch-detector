@@ -1,6 +1,6 @@
 name: jeefo_pitch_detector
 description: Cross platform IOS and Android Microphone pitch detector written in C.
-version: 0.0.1
+version: 0.0.2
 homepage:
 
 environment:
